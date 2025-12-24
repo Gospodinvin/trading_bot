@@ -1,5 +1,5 @@
 import pandas as pd
-import talib
+import ta
 import numpy as np
 from app.utils.logger import logger
 
