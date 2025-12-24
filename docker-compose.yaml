@@ -4,20 +4,20 @@ services:
   trading-bot:
   build: .
   ports:
-    - "8000:8000"
+    - "8080:8080"
   environment:
     - BOT_TOKEN=${BOT_TOKEN}
     - DATABASE_URL=sqlite:///./trading_bot.db
     - ENVIRONMENT=production
     - ADMIN_IDS=${ADMIN_IDS}
-    - PORT=8000
+    - PORT=8080
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads
       - ./models:/app/models
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
