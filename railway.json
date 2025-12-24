@@ -4,7 +4,7 @@
     "builder": "DOCKERFILE"
   },
   "deploy": {
-    "startCommand": "gunicorn app.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT",
+    "startCommand": "python -c \"import os; port = os.getenv('PORT', '8080'); print(f'Starting on port {port}'); import subprocess; subprocess.run(['gunicorn', 'app.main:app', '--workers', '2', '--worker-class', 'uvicorn.workers.UvicornWorker', '--bind', f'0.0.0.0:{port}'])\"",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100
   }
