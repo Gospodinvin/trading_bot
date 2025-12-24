@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Устанавливаем системные зависимости для OpenCV
+# Устанавливаем системные зависимости для OpenCV и других библиотек
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -16,13 +16,18 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-
 # Создаем заглушку для talib если не установлен
-RUN python -c "
+RUN python3 -c "
 import os
-if not os.path.exists('/usr/local/lib/python3.11/site-packages/talib.py'):
-    stub = '''
+import sys
+
+# Проверяем, есть ли talib
+try:
+    import talib
+    print('TA-Lib already installed')
+except ImportError:
+    print('Creating TA-Lib stub...')
+    stub_code = '''
 import numpy as np
 import pandas as pd
 
@@ -42,10 +47,10 @@ def SMA(close, timeperiod):
     return pd.Series(close).rolling(window=timeperiod).mean().values
 
 def MACD(close, fastperiod=12, slowperiod=26, signalperiod=9):
-    ema_fast = pd.Series(close).ewm(span=fastperiod).mean()
-    ema_slow = pd.Series(close).ewm(span=slowperiod).mean()
+    ema_fast = pd.Series(close).ewm(span=fastperiod, adjust=False).mean()
+    ema_slow = pd.Series(close).ewm(span=slowperiod, adjust=False).mean()
     macd = ema_fast - ema_slow
-    signal = macd.ewm(span=signalperiod).mean()
+    signal = macd.ewm(span=signalperiod, adjust=False).mean()
     hist = macd - signal
     return macd.values, signal.values, hist.values
 
@@ -67,19 +72,28 @@ def STOCH(high, low, close, fastk_period=14):
     return k.values, d.values
 
 def ATR(high, low, close, timeperiod=14):
-    tr1 = high - low
-    tr2 = abs(high - close.shift())
-    tr3 = abs(low - close.shift())
+    import pandas as pd
+    high_series = pd.Series(high)
+    low_series = pd.Series(low)
+    close_series = pd.Series(close)
+    tr1 = high_series - low_series
+    tr2 = abs(high_series - close_series.shift())
+    tr3 = abs(low_series - close_series.shift())
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
     atr = tr.rolling(timeperiod).mean()
     return atr.values
 '''
+    
+    # Записываем заглушку
     with open('/usr/local/lib/python3.11/site-packages/talib.py', 'w') as f:
-        f.write(stub)
+        f.write(stub_code)
+    print('TA-Lib stub created successfully')
 "
+
+COPY . .
 
 # Устанавливаем порт по умолчанию
 ENV PORT=8000
 
-# Запускаем через Python
-CMD ["python", "start.py"]
+# Простая команда запуска
+CMD ["gunicorn", "app.main:app", "--workers", "2", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
