@@ -86,7 +86,9 @@ class FeatureExtractor:
     def _add_rsi(self, features, closes, highs, lows):
         """Add RSI indicator"""
         if len(closes) >= 14:
-            rsi = talib.RSI(closes, timeperiod=14)
+            rsi_series = ta.momentum.RSIIndicator(pd.Series(closes), window=14).rsi()
+            if not rsi_series.empty:
+                features['rsi'] = rsi_series.iloc[-1]
             if not np.isnan(rsi[-1]):
                 features['rsi'] = rsi[-1]
                 features['rsi_overbought'] = 1 if rsi[-1] > 70 else 0
@@ -95,8 +97,10 @@ class FeatureExtractor:
     def _add_macd(self, features, closes, highs, lows):
         """Add MACD indicator"""
         if len(closes) >= 26:
-            macd, macd_signal, macd_hist = talib.MACD(
-                closes, 
+            macd_indicator = ta.trend.MACD(pd.Series(closes))
+            features['macd'] = macd_indicator.macd().iloc[-1]
+            features['macd_signal'] = macd_indicator.macd_signal().iloc[-1]
+            features['macd_hist'] = macd_indicator.macd_diff().iloc[-1]
                 fastperiod=12, 
                 slowperiod=26, 
                 signalperiod=9
@@ -110,9 +114,9 @@ class FeatureExtractor:
     def _add_sma(self, features, closes, highs, lows):
         """Add Simple Moving Averages"""
         if len(closes) >= 50:
-            features['sma_10'] = talib.SMA(closes, timeperiod=10)[-1]
-            features['sma_20'] = talib.SMA(closes, timeperiod=20)[-1]
-            features['sma_50'] = talib.SMA(closes, timeperiod=50)[-1]
+            sma_series = ta.trend.SMAIndicator(pd.Series(closes), window=20).sma_indicator()
+            if not sma_series.empty:
+                features['sma_20'] = sma_series.iloc[-1]
             
             # Price position relative to SMAs
             if not np.isnan(features['sma_20']):
