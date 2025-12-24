@@ -2,11 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Устанавливаем системные зависимости
+# Устанавливаем только необходимые системные зависимости
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
-    libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
@@ -17,9 +16,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Создаем заглушку для talib используя heredoc
-RUN cat > /usr/local/lib/python3.11/site-packages/talib.py << 'EOF'
-import numpy as np
+# Создаем заглушку для talib
+RUN echo 'import numpy as np
 import pandas as pd
 
 def RSI(close, timeperiod=14):
@@ -46,14 +44,11 @@ def STOCH(high, low, close, fastk_period=14):
     return 50.0, 50.0
 
 def ATR(high, low, close, timeperiod=14):
-    return 0.01
-EOF
+    return 0.01' > /usr/local/lib/python3.11/site-packages/talib.py
 
 # Создаем заглушку для tensorflow
-RUN cat > /usr/local/lib/python3.11/site-packages/tensorflow.py << 'EOF'
-class MockTensorFlow:
+RUN echo 'class MockTensorFlow:
     __version__ = "2.15.0"
-    
     class keras:
         class models:
             @staticmethod
@@ -62,8 +57,7 @@ class MockTensorFlow:
                     def predict(self, *args, **kwargs):
                         import numpy as np
                         return np.array([[0.33, 0.33, 0.34]])
-                return MockModel()
-EOF
+                return MockModel()' > /usr/local/lib/python3.11/site-packages/tensorflow.py
 
 # Копируем исходный код
 COPY . .
