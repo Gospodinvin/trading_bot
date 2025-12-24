@@ -10,10 +10,6 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем и делаем скрипт исполняемым
-COPY start.sh .
-RUN chmod +x start.sh
-
 # Создаем заглушку для talib
 RUN echo 'import numpy as np
 import pandas as pd
@@ -34,5 +30,5 @@ def ATR(high, low, close, timeperiod=14): return 0.01' > /usr/local/lib/python3.
 
 COPY . .
 
-# Используем скрипт для запуска
-CMD ["./start.sh"]
+# Фиксированный порт 8000
+CMD ["gunicorn", "app.main:app", "--workers", "2", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
