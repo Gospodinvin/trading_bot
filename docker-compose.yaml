@@ -10,7 +10,7 @@ services:
     - DATABASE_URL=sqlite:///./trading_bot.db
     - ENVIRONMENT=production
     - ADMIN_IDS=${ADMIN_IDS}
-    - PORT=8000
+    - PORT=8080
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads
