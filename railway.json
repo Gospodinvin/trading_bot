@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "gunicorn app.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8080",
+    "startCommand": "./run.sh",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100
   }
